@@ -1,4 +1,3 @@
 0 | / | DIR | -1 | rwx | -
 1 | DIR3 | DIR | 0 | rwx | -
-2 | a.txt | FILE | 1 | rw- | 0
-3 | b.txt | FILE | 1 | rw- | 0
+2 | a.txt | FILE | 1 | r-- | 0

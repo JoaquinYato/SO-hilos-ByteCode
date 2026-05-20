@@ -83,7 +83,7 @@ def _imprimir_resultado(resultado: dict):
     elif "salida" in resultado:
         print(resultado["salida"])
 
-# Comandos de navegación y creación
+#Comandos de navegación y creación
 def cmd_mkdir(nombre: str) -> None:
     global GPWD
     registros = _cargar_registros()
@@ -148,15 +148,62 @@ def _ruta_actual(registros: list[dict]) -> str:
     partes.reverse()
     return "/" + "/".join(partes) if partes else "/"
 
-#Prueba de funcionamientos basicos
+#Comandos de consulta y modificación
+def cmd_ls(detallado: bool = False) -> None:
+    registros = _cargar_registros()
+    hijos = [r for r in registros if r["padre"] == GPWD]
+    if not hijos:
+        print("(directorio vacío)")
+        return
+    if detallado:
+        print(f"{'ID':<4} | {'TIPO':<4} | {'PERMISOS':<8} | {'TAMAÑO':<6} | NOMBRE")
+        for r in hijos:
+            print(f"{r['id']:<4} | {r['tipo']:<4} | {r['permisos']:<8} | {r['tamanio']:<6} | {r['nombre']}")
+    else:
+        for r in hijos:
+            print(r["nombre"])
+
+def cmd_chmod(permisos: str, nombre: str) -> None:
+    if len(permisos) != 3 or not all(c in "rwx-" for c in permisos):
+        print("Error: permisos inválidos. Formato esperado: rwx, r--, rw-, etc.")
+        return
+    registros = _cargar_registros()
+    for r in registros:
+        if r["nombre"] == nombre and r["padre"] == GPWD:
+            r["permisos"] = permisos
+            _guardar_registros(registros)
+            print(f"Permisos de '{nombre}' cambiados a {permisos}.")
+            return
+    print(f"Error: '{nombre}' no encontrado en el directorio actual.")
+
+def cmd_rm(nombre: str) -> None:
+    registros = _cargar_registros()
+    for r in registros:
+        if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "FILE":
+            registros.remove(r)
+            _guardar_registros(registros)
+            print(f"Archivo '{nombre}' eliminado correctamente.")
+            return
+    print(f"Error: archivo '{nombre}' no encontrado en el directorio actual.")
+
 if __name__ == "__main__":
+    import os
+    if os.path.exists(FILE):
+        os.remove(FILE)
     inicializar_fat()
     print("=== Test ===")
     cmd_mkdir("DIR3")
     cmd_cd("DIR3")
     cmd_touch("a.txt")
     cmd_touch("b.txt")
-    cmd_touch("a.txt")   # debe mostrar error
-    cmd_cd("..")
-    cmd_cd("noexiste")   # debe mostrar error
-    print(f"Siguiente ID disponible: {_siguiente_id()}")
+    print("-- ls --")
+    cmd_ls()
+    print("-- ls -l --")
+    cmd_ls(detallado=True)
+    cmd_chmod("r--", "a.txt")
+    print("-- ls -l tras chmod --")
+    cmd_ls(detallado=True)
+    cmd_rm("b.txt")
+    print("-- ls tras rm --")
+    cmd_ls()
+    cmd_rm("noexiste")   # debe mostrar error
