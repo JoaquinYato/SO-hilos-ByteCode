@@ -83,13 +83,80 @@ def _imprimir_resultado(resultado: dict):
     elif "salida" in resultado:
         print(resultado["salida"])
 
+# Comandos de navegación y creación
+def cmd_mkdir(nombre: str) -> None:
+    global GPWD
+    registros = _cargar_registros()
+    # Verificar que no exista ya un directorio con ese nombre en el directorio actual
+    for r in registros:
+        if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "DIR":
+            print(f"Error: el directorio '{nombre}' ya existe.")
+            return
+    nuevo_id = _siguiente_id()
+    escritura(nuevo_id, nombre, "DIR", GPWD, "rwx", "-")
+    print(f"Directorio '{nombre}' creado correctamente.")
+
+def cmd_cd(destino: str) -> None:
+    global GPWD
+    registros = _cargar_registros()
+
+    if destino == "..":
+        if GPWD == 0:
+            print("Ya estás en el directorio raíz.")
+            return
+        actual = next((r for r in registros if r["id"] == GPWD), None)
+        if actual:
+            GPWD = actual["padre"]
+            ruta = _ruta_actual(registros)
+            print(f"Directorio actual cambiado a: {ruta}")
+        return
+
+    # Buscar el directorio destino dentro del directorio actual
+    for r in registros:
+        if r["nombre"] == destino and r["padre"] == GPWD and r["tipo"] == "DIR":
+            GPWD = r["id"]
+            ruta = _ruta_actual(registros)
+            print(f"Directorio actual cambiado a: {ruta}")
+            return
+
+    print(f"Error: directorio '{destino}' no encontrado.")
 
 
+def cmd_touch(nombre: str) -> None:
+    global GPWD
+    registros = _cargar_registros()
+    # Verificar que no exista ya un archivo con ese nombre en el directorio actual
+    for r in registros:
+        if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "FILE":
+            print(f"Error: el archivo '{nombre}' ya existe.")
+            return
+    nuevo_id = _siguiente_id()
+    escritura(nuevo_id, nombre, "FILE", GPWD, "rw-", "0")
+    print(f"Archivo '{nombre}' creado correctamente.")
+
+
+def _ruta_actual(registros: list[dict]) -> str:
+    """Construye la ruta absoluta del directorio actual recorriendo padres."""
+    partes = []
+    nodo = GPWD
+    while nodo != 0:
+        r = next((x for x in registros if x["id"] == nodo), None)
+        if not r:
+            break
+        partes.append(r["nombre"])
+        nodo = r["padre"]
+    partes.reverse()
+    return "/" + "/".join(partes) if partes else "/"
+
+#Prueba de funcionamientos basicos
 if __name__ == "__main__":
     inicializar_fat()
-    registros = _cargar_registros()
-    print("fat_db.txt inicializado. Registros cargados:")
-    for r in registros:
-        print(r)
-    print(f"GPWD = {GPWD}")
+    print("=== Test ===")
+    cmd_mkdir("DIR3")
+    cmd_cd("DIR3")
+    cmd_touch("a.txt")
+    cmd_touch("b.txt")
+    cmd_touch("a.txt")   # debe mostrar error
+    cmd_cd("..")
+    cmd_cd("noexiste")   # debe mostrar error
     print(f"Siguiente ID disponible: {_siguiente_id()}")
