@@ -186,24 +186,74 @@ def cmd_rm(nombre: str) -> None:
             return
     print(f"Error: archivo '{nombre}' no encontrado en el directorio actual.")
 
-if __name__ == "__main__":
-    import os
-    if os.path.exists(FILE):
-        os.remove(FILE)
+def _crear_archivo_hilo(n: int) -> None:
+    nombre = f"hilo_{n}.txt"
+    print(f"Hilo {n} creando archivo {nombre}")
+    nuevo_id = _siguiente_id()
+    escritura(nuevo_id, nombre, "FILE", GPWD, "rw-", "0")
+
+def cmd_test_hilos() -> None:
+    print("Iniciando prueba concurrente con hilos...")
+    hilos = [threading.Thread(target=_crear_archivo_hilo, args=(i,)) for i in range(1, 6)]
+    for h in hilos:
+        h.start()
+    for h in hilos:
+        h.join()
+    print("Todos los hilos finalizaron correctamente.")
+
+def _mostrar_cabecera() -> None:
+    print("========================================")
+    print("       SIMULADOR FAT EN PYTHON          ")
+    print("========================================")
+    print("Sistema FAT inicializado correctamente.")
+    registros = _cargar_registros()
+    print(f"Directorio actual: {_ruta_actual(registros)}")
+    print("Comandos disponibles:")
+    print("  mkdir <nombre>   cd <nombre>   cd ..")
+    print("  touch <nombre>   ls            ls -l")
+    print("  chmod <permisos> <nombre>      rm <nombre>")
+    print("  test_hilos       exit")
+
+def main() -> None:
     inicializar_fat()
-    print("=== Test ===")
-    cmd_mkdir("DIR3")
-    cmd_cd("DIR3")
-    cmd_touch("a.txt")
-    cmd_touch("b.txt")
-    print("-- ls --")
-    cmd_ls()
-    print("-- ls -l --")
-    cmd_ls(detallado=True)
-    cmd_chmod("r--", "a.txt")
-    print("-- ls -l tras chmod --")
-    cmd_ls(detallado=True)
-    cmd_rm("b.txt")
-    print("-- ls tras rm --")
-    cmd_ls()
-    cmd_rm("noexiste")   # debe mostrar error
+    _mostrar_cabecera()
+
+    while True:
+        registros = _cargar_registros()
+        ruta = _ruta_actual(registros)
+        try:
+            entrada = input(f"\n[{ruta}]> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nSaliendo del simulador FAT...")
+            break
+
+        if not entrada:
+            continue
+
+        partes = entrada.split()
+        cmd = partes[0]
+
+        if cmd == "exit":
+            print("Saliendo del simulador FAT...")
+            break
+        elif cmd == "mkdir" and len(partes) == 2:
+            cmd_mkdir(partes[1])
+        elif cmd == "cd" and len(partes) == 2:
+            cmd_cd(partes[1])
+        elif cmd == "touch" and len(partes) == 2:
+            cmd_touch(partes[1])
+        elif cmd == "ls" and len(partes) == 1:
+            cmd_ls()
+        elif cmd == "ls" and len(partes) == 2 and partes[1] == "-l":
+            cmd_ls(detallado=True)
+        elif cmd == "chmod" and len(partes) == 3:
+            cmd_chmod(partes[1], partes[2])
+        elif cmd == "rm" and len(partes) == 2:
+            cmd_rm(partes[1])
+        elif cmd == "test_hilos":
+            cmd_test_hilos()
+        else:
+            print(f"Comando no reconocido: '{entrada}'")
+
+if __name__ == "__main__":
+    main()
