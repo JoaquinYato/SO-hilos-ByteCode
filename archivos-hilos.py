@@ -9,7 +9,7 @@ FILE = "fat_db.txt"
 
 GPWD = 0
 
-def _cargar_registros() -> list[dict]:
+def cargarRegistro() -> list[dict]:
     registros = []
     with lock:
         with open(FILE, "r", encoding="utf-8") as f:
@@ -31,7 +31,7 @@ def _cargar_registros() -> list[dict]:
     return registros
 
 
-def _guardar_registros(registros: list[dict]) -> None:
+def guardarRegistro(registros: list[dict]) -> None:
     with lock:
         with open(FILE, "w", encoding="utf-8") as f:
             for r in registros:
@@ -40,8 +40,8 @@ def _guardar_registros(registros: list[dict]) -> None:
                 f.write(linea)
 
 
-def _siguiente_id() -> int:
-    registros = _cargar_registros()
+def siguienteID() -> int:
+    registros = cargarRegistro()
     if not registros:
         return 1
     return max(r["id"] for r in registros) + 1
@@ -68,7 +68,7 @@ def ejecutar(fn, args: tuple):
     return resultado
 
 
-def _imprimir_resultado(resultado: dict):
+def ImprimirResultado(resultado: dict):
     if "error" in resultado:
         print(f"  ✗ {resultado['error']}")
     elif "ok" in resultado:
@@ -80,19 +80,19 @@ def _imprimir_resultado(resultado: dict):
 
 def cmd_mkdir(nombre: str) -> None:
     global GPWD
-    registros = _cargar_registros()
+    registros = cargarRegistro()
     
     for r in registros:
         if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "DIR":
             print(f"Error: el directorio '{nombre}' ya existe.")
             return
-    nuevo_id = _siguiente_id()
+    nuevo_id = siguienteID()
     escritura(nuevo_id, nombre, "DIR", GPWD, "rwx", "-")
     print(f"Directorio '{nombre}' creado correctamente.")
 
 def cmd_cd(destino: str) -> None:
     global GPWD
-    registros = _cargar_registros()
+    registros = cargarRegistro()
 
     if destino == "..":
         if GPWD == 0:
@@ -101,7 +101,7 @@ def cmd_cd(destino: str) -> None:
         actual = next((r for r in registros if r["id"] == GPWD), None)
         if actual:
             GPWD = actual["padre"]
-            ruta = _ruta_actual(registros)
+            ruta = rutaActual(registros)
             print(f"Directorio actual cambiado a: {ruta}")
         return
 
@@ -109,7 +109,7 @@ def cmd_cd(destino: str) -> None:
     for r in registros:
         if r["nombre"] == destino and r["padre"] == GPWD and r["tipo"] == "DIR":
             GPWD = r["id"]
-            ruta = _ruta_actual(registros)
+            ruta = rutaActual(registros)
             print(f"Directorio actual cambiado a: {ruta}")
             return
 
@@ -118,18 +118,18 @@ def cmd_cd(destino: str) -> None:
 
 def cmd_touch(nombre: str) -> None:
     global GPWD
-    registros = _cargar_registros()
+    registros = cargarRegistro()
     
     for r in registros:
         if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "FILE":
             print(f"Error: el archivo '{nombre}' ya existe.")
             return
-    nuevo_id = _siguiente_id()
+    nuevo_id = siguienteID()
     escritura(nuevo_id, nombre, "FILE", GPWD, "rw-", "0")
     print(f"Archivo '{nombre}' creado correctamente.")
 
 
-def _ruta_actual(registros: list[dict]) -> str:
+def rutaActual(registros: list[dict]) -> str:
     partes = []
     nodo = GPWD
     while nodo != 0:
@@ -143,7 +143,7 @@ def _ruta_actual(registros: list[dict]) -> str:
 
 
 def cmd_ls(detallado: bool = False) -> None:
-    registros = _cargar_registros()
+    registros = cargarRegistro()
     hijos = [r for r in registros if r["padre"] == GPWD]
     if not hijos:
         print("(directorio vacío)")
@@ -160,47 +160,47 @@ def cmd_chmod(permisos: str, nombre: str) -> None:
     if len(permisos) != 3 or not all(c in "rwx-" for c in permisos):
         print("Error: permisos inválidos. Formato esperado: rwx, r--, rw-, etc.")
         return
-    registros = _cargar_registros()
+    registros = cargarRegistro()
     for r in registros:
         if r["nombre"] == nombre and r["padre"] == GPWD:
             r["permisos"] = permisos
-            _guardar_registros(registros)
+            guardarRegistro(registros)
             print(f"Permisos de '{nombre}' cambiados a {permisos}.")
             return
     print(f"Error: '{nombre}' no encontrado en el directorio actual.")
 
 def cmd_rm(nombre: str) -> None:
-    registros = _cargar_registros()
+    registros = cargarRegistro()
     for r in registros:
         if r["nombre"] == nombre and r["padre"] == GPWD and r["tipo"] == "FILE":
             registros.remove(r)
-            _guardar_registros(registros)
+            guardarRegistro(registros)
             print(f"Archivo '{nombre}' eliminado correctamente.")
             return
     print(f"Error: archivo '{nombre}' no encontrado en el directorio actual.")
 
-def _crear_archivo_hilo(n: int) -> None:
+def crearArchivoHilo(n: int) -> None:
     nombre = f"hilo_{n}.txt"
     print(f"Hilo {n} creando archivo {nombre}")
-    nuevo_id = _siguiente_id()
+    nuevo_id = siguienteID()
     escritura(nuevo_id, nombre, "FILE", GPWD, "rw-", "0")
 
 def cmd_test_hilos() -> None:
     print("Iniciando prueba concurrente con hilos...")
-    hilos = [threading.Thread(target=_crear_archivo_hilo, args=(i,)) for i in range(1, 6)]
+    hilos = [threading.Thread(target=crearArchivoHilo, args=(i,)) for i in range(1, 6)]
     for h in hilos:
         h.start()
     for h in hilos:
         h.join()
     print("Todos los hilos finalizaron correctamente.")
 
-def _mostrar_cabecera() -> None:
+def mostrarCabecera() -> None:
     print("========================================")
     print("       SIMULADOR FAT EN PYTHON          ")
     print("========================================")
     print("Sistema FAT inicializado correctamente.")
-    registros = _cargar_registros()
-    print(f"Directorio actual: {_ruta_actual(registros)}")
+    registros = cargarRegistro()
+    print(f"Directorio actual: {rutaActual(registros)}")
     print("Comandos disponibles:")
     print("  mkdir <nombre>   cd <nombre>   cd ..")
     print("  touch <nombre>   ls            ls -l")
@@ -209,11 +209,11 @@ def _mostrar_cabecera() -> None:
 
 def main() -> None:
     inicializar_fat()
-    _mostrar_cabecera()
+    mostrarCabecera()
 
     while True:
-        registros = _cargar_registros()
-        ruta = _ruta_actual(registros)
+        registros = cargarRegistro()
+        ruta = rutaActual(registros)
         try:
             entrada = input(f"\n[{ruta}]> ").strip()
         except (EOFError, KeyboardInterrupt):
