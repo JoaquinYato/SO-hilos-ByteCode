@@ -1,6 +1,4 @@
 import threading
-import time
-import random
 from datetime import datetime
 import os
 
@@ -70,9 +68,9 @@ def ejecutar(fn, args: tuple):
 
 def ImprimirResultado(resultado: dict):
     if "error" in resultado:
-        print(f"  ✗ {resultado['error']}")
+        print(f"  {resultado['error']}")
     elif "ok" in resultado:
-        print(f"  ✓ {resultado['ok']}")
+        print(f"  {resultado['ok']}")
     elif "salida" in resultado:
         print(resultado["salida"])
 

@@ -6,3 +6,16 @@
 6 | hilo_3.txt | FILE | 1 | rw- | 0
 7 | hilo_5.txt | FILE | 1 | rw- | 0
 8 | nuevo.txt | FILE | 1 | rw- | 0
+9 | joaco | DIR | 0 | rwx | -
+10 | hilo_1.txt | FILE | 0 | rw- | 0
+11 | hilo_5.txt | FILE | 0 | rw- | 0
+11 | hilo_2.txt | FILE | 0 | rw- | 0
+11 | hilo_4.txt | FILE | 0 | rw- | 0
+11 | hilo_3.txt | FILE | 0 | rw- | 0
+12 | joaco2 | DIR | 0 | rwx | -
+13 | hola.txt | FILE | 0 | rw- | 0
+14 | hilo_1.txt | FILE | 0 | rw- | 0
+14 | hilo_2.txt | FILE | 0 | rw- | 0
+15 | hilo_4.txt | FILE | 0 | rw- | 0
+15 | hilo_3.txt | FILE | 0 | rw- | 0
+16 | hilo_5.txt | FILE | 0 | rw- | 0
